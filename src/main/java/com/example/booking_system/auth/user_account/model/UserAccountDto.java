@@ -19,7 +19,7 @@ public class UserAccountDto {
     private UUID userId;
     private String email;
     private String password;
-    private String fullName;
+    private String name;
     private Long roleId;
 
     // role
@@ -34,7 +34,7 @@ public class UserAccountDto {
                 .setUserId(ua.user_id())
                 .setEmail(ua.email())
                 .setPassword(ua.password())
-                .setFullName(ua.full_name())
+                .setName(ua.name())
                 .setRoleId(ua.role_id());
     }
 

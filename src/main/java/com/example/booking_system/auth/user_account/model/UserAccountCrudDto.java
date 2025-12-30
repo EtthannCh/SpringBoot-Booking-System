@@ -19,6 +19,7 @@ public class UserAccountCrudDto {
     private String fullName;
     private Long roleId;
     private RoleCodeEnum roleCode;
+    private String token;
 
     public UserAccount toRecord(HeaderCollections header) {
         return new UserAccount(null, header.getUserId(), email, password, fullName, roleId, null,

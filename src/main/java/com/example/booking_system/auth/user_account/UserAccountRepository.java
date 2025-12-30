@@ -32,14 +32,14 @@ public class UserAccountRepository {
                 values
                 (
                     :email, :password,
-                    :fullName, :roleId,
+                    :name, :roleId,
                     now()
                 )
                 returning user_id;
                     """)
                 .param("email", userAccount.email())
                 .param("password", userAccount.password())
-                .param("fullName", userAccount.full_name())
+                .param("name", userAccount.name())
                 .param("roleId", userAccount.role_id())
                 .update(keyHolder, "keyholder");
 
@@ -60,8 +60,6 @@ public class UserAccountRepository {
                 .param("id", userAccount.user_id())
                 .param("email", userAccount.email())
                 .param("passwordHash", userAccount.password())
-                .param("fullName", userAccount.full_name())
-                .param("roleId", userAccount.role_id())
                 .param("lastUpdatedBy", userAccount.last_updated_by())
                 .param("lastUpdatedById", userAccount.last_updated_by_id())
                 .update();
@@ -85,10 +83,16 @@ public class UserAccountRepository {
 
     public Optional<UserAccountDto> findByUsername(String username) {
         return jdbcClient.sql("""
-                    select u.*, r.code roleCode, u.password_hash password
+                    select 
+                        u.id userAccountId,
+                        u.user_id userId,
+                        email,
+                        r.code roleCode, u.password_hash password,
+                        u.name name,
+                        u.role_id roleId
                     from users u
                     inner join roles r on u.role_id = r.id
-                    where upper(name) = upper(:username)
+                    where upper(u.name) = upper(:username)
                 """)
                 .param("username", username)
                 .query(UserAccountDto.class)

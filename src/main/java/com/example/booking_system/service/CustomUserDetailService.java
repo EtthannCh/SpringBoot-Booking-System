@@ -1,7 +1,9 @@
 package com.example.booking_system.service;
 
 import java.util.Collections;
+import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -15,12 +17,13 @@ import com.example.booking_system.exception.BusinessException;
 @Service
 public class CustomUserDetailService implements UserDetailsService {
 
+    @Autowired
     private UserAccountRepository userAccountRepository;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         UserAccountDto user = userAccountRepository.findByUsername(username).orElseThrow(() -> new BusinessException("AUTH_USER_USERNAMENOTFOUND"));
-        return new User(user.getFullName(), user.getPassword(), Collections.emptyList());
+        return new User(user.getName(), user.getPassword(), Collections.emptyList());
     }
     
 }

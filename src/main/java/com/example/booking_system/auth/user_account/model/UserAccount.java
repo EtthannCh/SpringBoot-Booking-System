@@ -10,7 +10,7 @@ public record UserAccount(
         UUID user_id,
         String email,
         String password,
-        String full_name,
+        String name,
         Long role_id,
         LocalDateTime created__at,
         String created_by,
