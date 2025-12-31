@@ -27,6 +27,11 @@ public class JwtUtil {
 
     @PostConstruct
     public void init() {
+        // • Convert the string secret → cryptographic key
+        // • Do it once, not on every request
+        // • Store it in memory
+        // key ≠ null
+        // key = HMAC key derived from jwtSecret
         this.key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
     }
 
@@ -39,14 +44,14 @@ public class JwtUtil {
                 .compact();
     }
 
-    public String getUserFromToken(String token){
+    public String getUserFromToken(String token) {
         return Jwts.parser().verifyWith(key).build()
                 .parseSignedClaims(token)
                 .getPayload()
                 .getSubject();
     }
 
-    public boolean validateJwtToken(String token){
+    public boolean validateJwtToken(String token) {
         try {
             Jwts.parser().verifyWith(key).build().parseSignedClaims(token);
             return true;

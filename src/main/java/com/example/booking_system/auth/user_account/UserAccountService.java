@@ -17,5 +17,9 @@ public interface UserAccountService {
 
     public Optional<UserAccountDto> findByUserId(UUID userId);
 
-    public boolean login(UserAccountCrudDto userAccountCrudDto, HeaderCollections header) throws Exception;
+    public void login(UserAccountCrudDto userAccountCrudDto, HeaderCollections header) throws Exception;
+
+    public String signUp(UserAccountCrudDto userAccountCrudDto, HeaderCollections header) throws Exception;
+
+    public String refreshToken(UserAccountCrudDto userAccountCrudDto) throws Exception;
 }

@@ -1,18 +1,26 @@
 package com.example.booking_system.auth.user_account;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-import javax.swing.plaf.metal.MetalTheme;
-
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.bcrypt.BCrypt;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.RequestBody;
 
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.interfaces.DecodedJWT;
 import com.example.booking_system.auth.role.RoleService;
 import com.example.booking_system.auth.role.model.RoleDto;
 import com.example.booking_system.auth.role.model.RoleEnum.RoleCodeEnum;
@@ -20,6 +28,7 @@ import com.example.booking_system.auth.user_account.model.UserAccountCrudDto;
 import com.example.booking_system.auth.user_account.model.UserAccountDto;
 import com.example.booking_system.exception.BusinessException;
 import com.example.booking_system.header.HeaderCollections;
+import com.example.booking_system.security.JwtUtil;
 import com.example.booking_system.utils.CheckUtil;
 
 @Service
@@ -28,12 +37,29 @@ public class UserAccountServiceImpl implements UserAccountService {
     private final UserAccountRepository userAccountRepository;
     private final RoleService roleService;
 
+    @Autowired
+    private final AuthenticationManager authenticationManager;
+
+    @Autowired
+    private final PasswordEncoder encoder;
+
+    @Autowired
+    private final JwtUtil jwtUtil;
+
     private Map<String, String> duplicateKeyMap = new HashMap<>(
             Map.ofEntries(Map.entry("user_name_key", "BOK_USER_EMAILEXIST")));
 
-    public UserAccountServiceImpl(UserAccountRepository userAccountRepository, RoleService roleService) {
+    public UserAccountServiceImpl(
+            UserAccountRepository userAccountRepository,
+            RoleService roleService,
+            AuthenticationManager authenticationManager,
+            PasswordEncoder encoder,
+            JwtUtil jwtUtil) {
         this.userAccountRepository = userAccountRepository;
         this.roleService = roleService;
+        this.authenticationManager = authenticationManager;
+        this.encoder = encoder;
+        this.jwtUtil = jwtUtil;
     }
 
     @Override
@@ -84,12 +110,62 @@ public class UserAccountServiceImpl implements UserAccountService {
         return userAccountRepository.findByUserId(userId);
     }
 
-    public boolean login(UserAccountCrudDto userAccountCrudDto, HeaderCollections header) throws Exception {
-        UserAccountDto userLogin = userAccountRepository.findByUserId(header.getUserId())
-                .orElseThrow(() -> new BusinessException("AUTH_USERACCOUNT_USERNOTFOUND"));
-        if (!BCrypt.checkpw(userAccountCrudDto.getPassword(), userLogin.getPassword()))
-            return false;
+    @Override
+    public void login(UserAccountCrudDto userAccountCrudDto, HeaderCollections header) throws Exception {
+        try {
+            authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(userAccountCrudDto.getFullName(),
+                    userAccountCrudDto.getPassword()));
 
-        return true;
+            checkTokenExpired(userAccountCrudDto.getToken());
+
+            jwtUtil.validateJwtToken(userAccountCrudDto.getToken());
+
+            UserAccountDto userLogin = userAccountRepository.findByUserId(header.getUserId())
+                    .orElseThrow(() -> new BusinessException("AUTH_USERACCOUNT_USERNOTFOUND"));
+            if (!BCrypt.checkpw(userAccountCrudDto.getPassword(), userLogin.getPassword()))
+                throw new BusinessException("AUTH_USERACCOUNT_PASSWORDINVALID");
+
+        } catch (Exception e) {
+            throw e;
+        }
+    }
+
+    @Override
+    public String signUp(@RequestBody UserAccountCrudDto userAccountCrudDto, HeaderCollections header) throws Exception {
+        checkTokenExpired(userAccountCrudDto.getToken());
+
+        jwtUtil.validateJwtToken(userAccountCrudDto.getToken());
+        return jwtUtil.generateToken(userAccountCrudDto.getFullName());
+    }
+
+    private void checkTokenExpired(String token) throws Exception {
+        DecodedJWT decodedJWT = JWT.decode(token);
+        Date expiredAt = decodedJWT.getExpiresAt();
+        Date now = new Date();
+
+        LocalDateTime expiredDateTime = LocalDateTime.ofInstant(expiredAt.toInstant(), ZoneId.systemDefault());
+        LocalDateTime nowTime = LocalDateTime.ofInstant(now.toInstant(), ZoneId.systemDefault());
+
+        if (nowTime.isAfter(expiredDateTime))
+            throw new BusinessException("AUTH_USERACCOUNT_TOKENEXPIRED");
+    }
+
+    @Override
+    public String refreshToken(UserAccountCrudDto userAccountCrudDto) throws Exception {
+        UserAccountDto user = userAccountRepository.findByUsername(userAccountCrudDto.getFullName())
+                .orElseThrow(() -> new BusinessException("AUTH_USERACCOUNT_USERNOTFOUND"));
+        if (!BCrypt.checkpw(userAccountCrudDto.getPassword(), user.getPassword()))
+            throw new BusinessException("AUTH_USERACCOUNT_PASSWORDINVALID");
+
+        DecodedJWT decodedJWT = JWT.decode(userAccountCrudDto.getPreviousToken());
+        Date expiredAt = decodedJWT.getExpiresAt();
+        Date now = new Date();
+
+        LocalDateTime expiredDateTime = LocalDateTime.ofInstant(expiredAt.toInstant(), ZoneId.systemDefault());
+        LocalDateTime nowTime = LocalDateTime.ofInstant(now.toInstant(), ZoneId.systemDefault());
+        if(expiredDateTime.isBefore(nowTime))
+            throw new BusinessException("AUTH_USERACCOUNT_TOKENNOTEXPIRED");
+
+        return jwtUtil.generateToken(userAccountCrudDto.getFullName());
     }
 }

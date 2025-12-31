@@ -51,9 +51,11 @@ public class WebSecurityConfig {
                 // .cors(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
                 .exceptionHandling(e -> e.authenticationEntryPoint(unauthorizedHandler))
-                .authorizeHttpRequests(a -> a.requestMatchers("/auth/login", "/auth/sign-up").permitAll()
-                        .requestMatchers("/admin").hasRole("ADMIN")
-                        .anyRequest().authenticated());
+                .authorizeHttpRequests(
+                        a -> a.requestMatchers("/account/login", "/account/sign-up", "/auth/refresh-token",
+                                "/account/sign-up").permitAll()
+                                .requestMatchers("/admin").hasRole("ADMIN")
+                                .anyRequest().authenticated());
 
         http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
         return http.build();

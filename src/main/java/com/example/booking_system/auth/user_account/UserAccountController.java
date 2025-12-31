@@ -13,7 +13,7 @@ import com.example.booking_system.constant.HeaderConstants;
 import com.example.booking_system.header.HeaderCollections;
 
 @RestController
-@RequestMapping("account")
+@RequestMapping("/account")
 public class UserAccountController {
     private UserAccountService userAccountService;
 
@@ -32,11 +32,20 @@ public class UserAccountController {
     }
 
     @PostMapping("/login")
-    public boolean loginUser(
+    public void loginUser(
             @RequestBody UserAccountCrudDto userAccountCrudDto,
             @RequestHeader(HeaderConstants.USER_ID) UUID userId,
             @RequestHeader(HeaderConstants.USER_NAME) String userName) throws Exception {
         HeaderCollections header = new HeaderCollections().setUserId(userId).setUserName(userName);
-        return userAccountService.login(userAccountCrudDto, header);
+        userAccountService.login(userAccountCrudDto, header);
     }
+
+    @PostMapping("/sign-up")
+    public String signUp(@RequestBody UserAccountCrudDto userAccountCrudDto,
+            @RequestHeader(HeaderConstants.USER_ID) UUID userId,
+            @RequestHeader(HeaderConstants.USER_NAME) String userName) throws Exception {
+                  HeaderCollections header = new HeaderCollections().setUserId(userId).setUserName(userName);
+        return userAccountService.signUp(userAccountCrudDto, header);
+    }
+
 }
