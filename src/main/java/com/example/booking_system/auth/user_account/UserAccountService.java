@@ -19,7 +19,5 @@ public interface UserAccountService {
 
     public void login(UserAccountCrudDto userAccountCrudDto, HeaderCollections header) throws Exception;
 
-    public String signUp(UserAccountCrudDto userAccountCrudDto, HeaderCollections header) throws Exception;
-
     public String refreshToken(UserAccountCrudDto userAccountCrudDto) throws Exception;
 }

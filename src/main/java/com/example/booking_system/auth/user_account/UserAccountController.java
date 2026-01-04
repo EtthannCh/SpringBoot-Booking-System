@@ -40,12 +40,4 @@ public class UserAccountController {
         userAccountService.login(userAccountCrudDto, header);
     }
 
-    @PostMapping("/sign-up")
-    public String signUp(@RequestBody UserAccountCrudDto userAccountCrudDto,
-            @RequestHeader(HeaderConstants.USER_ID) UUID userId,
-            @RequestHeader(HeaderConstants.USER_NAME) String userName) throws Exception {
-                  HeaderCollections header = new HeaderCollections().setUserId(userId).setUserName(userName);
-        return userAccountService.signUp(userAccountCrudDto, header);
-    }
-
 }

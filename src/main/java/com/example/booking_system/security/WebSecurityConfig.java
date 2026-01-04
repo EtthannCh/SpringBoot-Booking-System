@@ -52,8 +52,11 @@ public class WebSecurityConfig {
                 .cors(Customizer.withDefaults())
                 .exceptionHandling(e -> e.authenticationEntryPoint(unauthorizedHandler))
                 .authorizeHttpRequests(
-                        a -> a.requestMatchers("/account/login", "/account/sign-up", "/auth/refresh-token",
-                                "/account/sign-up").permitAll()
+                        a -> a.requestMatchers(
+                                "/account/login", 
+                                "/auth/refresh-token",
+                                "/auth/generate-token",
+                                "/account/register").permitAll()
                                 .requestMatchers("/admin").hasRole("ADMIN")
                                 .anyRequest().authenticated());
 

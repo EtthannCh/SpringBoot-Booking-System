@@ -98,4 +98,24 @@ public class UserAccountRepository {
                 .query(UserAccountDto.class)
                 .optional();
     }
+
+    public Optional<UserAccountDto> findByUsernameAndEmail(String username, String email) {
+        return jdbcClient.sql("""
+                    select 
+                        u.id userAccountId,
+                        u.user_id userId,
+                        email,
+                        r.code roleCode, u.password_hash password,
+                        u.name name,
+                        u.role_id roleId
+                    from users u
+                    inner join roles r on u.role_id = r.id
+                    where upper(u.name) = upper(:username)
+                    and upper(u.email) = upper(:email)
+                """)
+                .param("username", username)
+                .param("email", email)
+                .query(UserAccountDto.class)
+                .optional();
+    }
 }

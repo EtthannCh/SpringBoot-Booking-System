@@ -17,7 +17,6 @@ import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.RequestBody;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.interfaces.DecodedJWT;
@@ -67,6 +66,35 @@ public class UserAccountServiceImpl implements UserAccountService {
     public UUID createUserAccount(UserAccountCrudDto userAccountCrudDto, HeaderCollections header)
             throws Exception {
         try {
+            Optional<UserAccountDto> user = userAccountRepository
+                    .findByUsernameAndEmail(userAccountCrudDto.getFullName(), userAccountCrudDto.getEmail());
+            if (user.isPresent())
+                throw new BusinessException("AUTH_USERACCOUNT_USEREXIST");
+
+            checkTokenExpired(userAccountCrudDto.getToken());
+            jwtUtil.validateJwtToken(userAccountCrudDto.getToken());
+
+            DecodedJWT decodedNewJWT = JWT.decode(userAccountCrudDto.getToken());
+
+            Date now = new Date();
+            LocalDateTime nowTime = LocalDateTime.ofInstant(now.toInstant(), ZoneId.systemDefault());
+            // if previous token exist
+            if (userAccountCrudDto.getPreviousToken() != null && !userAccountCrudDto.getPreviousToken().equals("")) {
+                DecodedJWT decodedPreviousJWT = JWT.decode(userAccountCrudDto.getPreviousToken());
+                Date previousExpiredAt = decodedPreviousJWT.getExpiresAt();
+                LocalDateTime previousExpiredDateTime = LocalDateTime.ofInstant(previousExpiredAt.toInstant(),
+                        ZoneId.systemDefault());
+
+                if (nowTime.isBefore(previousExpiredDateTime))
+                    throw new BusinessException("AUTH_USERACCOUNT_PREVIOUSTOKENNOTEXPIRED");
+            }
+            Date expiredAt = decodedNewJWT.getExpiresAt();
+
+            LocalDateTime expiredDateTime = LocalDateTime.ofInstant(expiredAt.toInstant(), ZoneId.systemDefault());
+
+            if (nowTime.isAfter(expiredDateTime))
+                throw new BusinessException("AUTH_USERACCOUNT_TOKENEXPIRED");
+
             String pwHashed = BCrypt.hashpw(userAccountCrudDto.getPassword(), BCrypt.gensalt());
             userAccountCrudDto.setPassword(pwHashed);
             return userAccountRepository.createAccount(userAccountCrudDto.toRecord(header));
@@ -130,14 +158,6 @@ public class UserAccountServiceImpl implements UserAccountService {
         }
     }
 
-    @Override
-    public String signUp(@RequestBody UserAccountCrudDto userAccountCrudDto, HeaderCollections header) throws Exception {
-        checkTokenExpired(userAccountCrudDto.getToken());
-
-        jwtUtil.validateJwtToken(userAccountCrudDto.getToken());
-        return jwtUtil.generateToken(userAccountCrudDto.getFullName());
-    }
-
     private void checkTokenExpired(String token) throws Exception {
         DecodedJWT decodedJWT = JWT.decode(token);
         Date expiredAt = decodedJWT.getExpiresAt();
@@ -163,7 +183,7 @@ public class UserAccountServiceImpl implements UserAccountService {
 
         LocalDateTime expiredDateTime = LocalDateTime.ofInstant(expiredAt.toInstant(), ZoneId.systemDefault());
         LocalDateTime nowTime = LocalDateTime.ofInstant(now.toInstant(), ZoneId.systemDefault());
-        if(expiredDateTime.isBefore(nowTime))
+        if (expiredDateTime.isBefore(nowTime))
             throw new BusinessException("AUTH_USERACCOUNT_TOKENNOTEXPIRED");
 
         return jwtUtil.generateToken(userAccountCrudDto.getFullName());
