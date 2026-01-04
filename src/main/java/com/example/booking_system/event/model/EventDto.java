@@ -20,7 +20,6 @@ public class EventDto {
     private String description;
     private LocalDateTime periodStart;
     private LocalDateTime periodEnd;
-    private String duration;
     private List<String> startTime;
     private LocalDateTime createdAt;
     private String createdBy;

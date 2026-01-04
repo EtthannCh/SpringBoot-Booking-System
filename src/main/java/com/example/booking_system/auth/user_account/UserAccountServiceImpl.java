@@ -14,7 +14,6 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.bcrypt.BCrypt;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,9 +39,6 @@ public class UserAccountServiceImpl implements UserAccountService {
     private final AuthenticationManager authenticationManager;
 
     @Autowired
-    private final PasswordEncoder encoder;
-
-    @Autowired
     private final JwtUtil jwtUtil;
 
     private Map<String, String> duplicateKeyMap = new HashMap<>(
@@ -52,12 +48,10 @@ public class UserAccountServiceImpl implements UserAccountService {
             UserAccountRepository userAccountRepository,
             RoleService roleService,
             AuthenticationManager authenticationManager,
-            PasswordEncoder encoder,
             JwtUtil jwtUtil) {
         this.userAccountRepository = userAccountRepository;
         this.roleService = roleService;
         this.authenticationManager = authenticationManager;
-        this.encoder = encoder;
         this.jwtUtil = jwtUtil;
     }
 

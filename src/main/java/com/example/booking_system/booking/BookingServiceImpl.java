@@ -1,11 +1,16 @@
 package com.example.booking_system.booking;
 
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -73,11 +78,13 @@ public class BookingServiceImpl implements BookingService {
                     .orElseThrow(() -> new BusinessException("BOK_BOOKINGS_EVENTNOTFOUND"));
 
             List<String> startTimeList = event.getStartTime();
-            SimpleDateFormat sdf = new SimpleDateFormat("hh:mm:ss");
+            DateTimeFormatter sdf = DateTimeFormatter.ofPattern("HH:mm");
             for (String startTimeString : startTimeList) {
-                LocalTime startTime = LocalDateTime
-                        .ofInstant(sdf.parse(startTimeString).toInstant(), ZoneId.systemDefault()).toLocalTime();
-                if(!startTime.equals(bookingCrudDto.getShowTime()))
+                LocalTime startTime = LocalTime.parse(startTimeString, sdf);
+
+                if (startTime.equals(bookingCrudDto.getShowTime()))
+                    break;
+                else if (!startTime.equals(bookingCrudDto.getShowTime()))
                     throw new BusinessException("BOK_BOOKINGS_INVALIDTIME");
             }
 
@@ -95,7 +102,8 @@ public class BookingServiceImpl implements BookingService {
 
             Optional<SeatHistoryDto> seatHistory = seatHistoryService
                     .findSeatHistoryByLocationId(bookingCrudDto.getBookingDetailCrudDto().getSeatId());
-            if (seatHistory.isPresent() && !seatHistory.get().getStatus().equals(SeatHistoryStatus.UNOCCUPIED)) {
+            if (seatHistory.isPresent() && EnumSet.of(SeatHistoryStatus.OCCUPIED, SeatHistoryStatus.RESERVED)
+                    .contains(seatHistory.get().getStatus())) {
                 throw new BusinessException("BOK_BOOKINGS_SEATOCCUPIED");
                 // TODO:
                 // Give a list of show time for the users, then the time that are chosen by the
@@ -104,7 +112,8 @@ public class BookingServiceImpl implements BookingService {
                 // scheduler to reset the seat every day.
             }
 
-            LocationDto location = locationService.findLocationById(event.getLocationId())
+            LocationDto location = locationService
+                    .findLocationById(bookingCrudDto.getBookingDetailCrudDto().getSeatId())
                     .orElseThrow(() -> new BusinessException("BOK_BOOKING_LOCATIONNOTFOUND"));
             if (!location.getLocationType().equals(LocationType.STS))
                 throw new BusinessException("BOK_BOOKING_LOCATIONTYPEINVALID");
@@ -112,7 +121,7 @@ public class BookingServiceImpl implements BookingService {
             SeatHistoryCrudDto seatHistoryCrudDto = new SeatHistoryCrudDto()
                     .setCode(String.join("/", location.getSection(), location.getRow(),
                             location.getCol().toString()))
-                    .setLocationId(event.getLocationId())
+                    .setLocationId(location.getId())
                     .setStatus(SeatHistoryStatus.RESERVED);
             seatHistoryService.processReserveSeat(seatHistoryCrudDto, header);
 
@@ -126,7 +135,9 @@ public class BookingServiceImpl implements BookingService {
 
             return bookingId;
         } catch (Exception e) {
-            throw e;
+            Set<String> errSet = new HashSet<>();
+            errSet.add(e.getMessage());
+            throw new BusinessException("BOK_BOOKINGS_CREATEFAILED", errSet);
         }
     }
 }

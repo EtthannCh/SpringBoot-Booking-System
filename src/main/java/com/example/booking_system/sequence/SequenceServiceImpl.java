@@ -41,7 +41,6 @@ public class SequenceServiceImpl implements SequenceService {
         String format = seq.getFormat().replace("{", "").replace("}", "");
         String[] splittedField = format.split("/");
         String firstField = splittedField[0];
-        String dateField = splittedField[1];
         String numberSeqField = splittedField[2];
 
         Format formatter = new SimpleDateFormat("yyyy-MM-dd");

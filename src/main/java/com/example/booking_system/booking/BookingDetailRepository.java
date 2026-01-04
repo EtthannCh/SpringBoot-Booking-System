@@ -27,15 +27,15 @@ public class BookingDetailRepository {
                 values
                 (
                     :bookingId, :price, :seatId,
-                    :createdAt, :createdBy, now()
+                    now(), :createdBy, :createdById
                 )
                 """)
                 .param("bookingId", bookingDetail.booking_id())
                 .param("price", bookingDetail.price())
                 .param("seatId", bookingDetail.seat_id())
-                .param("createdAt", bookingDetail.created_at())
+                .param("createdById", bookingDetail.created_by_id())
                 .param("createdBy", bookingDetail.created_by())
-                .update(keyHolder, "keyHolder");
+                .update(keyHolder, "id");
         var id = keyHolder.getKey();
         return id.longValue();
     }

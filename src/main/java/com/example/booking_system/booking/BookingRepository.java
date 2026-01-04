@@ -35,7 +35,7 @@ public class BookingRepository {
                 """)
                 .param("userId", booking.user_id())
                 .param("eventId", booking.event_id())
-                .param("status", BookingStatus.DRAFT, Types.VARCHAR)
+                .param("status", BookingStatus.RESERVED, Types.VARCHAR)
                 .param("bookingNo", booking.booking_no())
                 .param("qty", booking.qty())
                 .param("showTime", booking.show_time())

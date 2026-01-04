@@ -64,7 +64,6 @@ public class EventRepository {
                     period_start,
                     period_end,
                     active,
-                    duration,
                     array_to_string(start_time, ',') startTime,
                     created_at,
                     created_by_id,
