@@ -17,6 +17,8 @@ import com.example.booking_system.auth.user_account.UserAccountService;
 import com.example.booking_system.auth.user_account.model.UserAccountDto;
 import com.example.booking_system.booking.model.BookingCrudDto;
 import com.example.booking_system.booking.model.BookingDetailCrudDto;
+import com.example.booking_system.booking.model.BookingDto;
+import com.example.booking_system.booking.model.BookingEnum.BookingStatus;
 import com.example.booking_system.event.EventService;
 import com.example.booking_system.event.model.EventDto;
 import com.example.booking_system.exception.BusinessException;
@@ -132,5 +134,30 @@ public class BookingServiceImpl implements BookingService {
         bookingDetailService.createBookingDetail(bookingDetailCrudDto, header);
 
         return bookingId;
+    }
+
+    @Override
+    public void cancelBooking(Long bookingId, HeaderCollections header) throws Exception {
+        BookingDto booking = bookingRepository.findBookingById(bookingId)
+                .orElseThrow(() -> new BusinessException("BOK_CANCELBOOKING_IDNOTFOUND"));
+        if (!booking.getStatus().equals(BookingStatus.RESERVED))
+            throw new BusinessException("BOK_CANCELBOOKING_INVALIDSTATUS");
+
+        bookingRepository.cancelBooking(bookingId, header);
+    }
+
+    @Override
+    public void cancelBookingByScheduler(Long bookingId) throws Exception {
+        BookingDto booking = bookingRepository.findBookingById(bookingId)
+                .orElseThrow(() -> new BusinessException("BOK_CANCELBOOKING_IDNOTFOUND"));
+        if (!booking.getStatus().equals(BookingStatus.RESERVED))
+            throw new BusinessException("BOK_CANCELBOOKING_INVALIDSTATUS");
+
+        bookingRepository.cancelBookingByScheduler(bookingId);
+    }
+
+    @Override
+    public List<BookingDto> findExpiredBookingList() {
+        return bookingRepository.findExpiredBookings();
     }
 }

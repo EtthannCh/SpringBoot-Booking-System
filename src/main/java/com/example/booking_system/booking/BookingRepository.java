@@ -2,6 +2,8 @@ package com.example.booking_system.booking;
 
 import java.sql.Types;
 import java.time.LocalTime;
+import java.util.List;
+import java.util.Optional;
 
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -9,7 +11,9 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
 import com.example.booking_system.booking.model.Booking;
+import com.example.booking_system.booking.model.BookingDto;
 import com.example.booking_system.booking.model.BookingEnum.BookingStatus;
+import com.example.booking_system.header.HeaderCollections;
 
 @Repository
 public class BookingRepository {
@@ -48,7 +52,7 @@ public class BookingRepository {
         return id.longValue();
     }
 
-    public Double findBookingCountForSingleEventPerPeriod(Long eventId, LocalTime showTime){
+    public Double findBookingCountForSingleEventPerPeriod(Long eventId, LocalTime showTime) {
         return jdbcCLient.sql("""
                 select coalesce(count(*),0)
                 from booking b
@@ -60,5 +64,57 @@ public class BookingRepository {
                 .param("showTime", showTime)
                 .query(Double.class)
                 .single();
+    }
+
+    public Optional<BookingDto> findBookingById(Long id) {
+        return jdbcCLient.sql("""
+                select *
+                from booking
+                where id = :id
+                """)
+                .param("id", id)
+                .query(BookingDto.class)
+                .optional();
+    }
+
+    public List<BookingDto> findExpiredBookings() {
+        return jdbcCLient.sql("""
+                select *
+                    from booking
+                    where now() - created_at > interval '10 minutes'
+                    and status = 'RESERVED'
+                """)
+                .query(BookingDto.class)
+                .list();
+    }
+
+    public void cancelBookingByScheduler(Long bookingId) {
+        jdbcCLient.sql("""
+                    update booking
+                    set
+                        status = 'CANCELLED',
+                        last_updated_by = 'SCHEDULER',
+                        last_updated_by_id = '542d0ce8-ea21-4cb3-9f2b-0103b502507d',
+                        last_updated_at = now()
+                    where id = :id
+                """)
+                .param("id", bookingId)
+                .update();
+    }
+
+    public void cancelBooking(Long bookingId, HeaderCollections header) {
+        jdbcCLient.sql("""
+                    update booking
+                    set
+                        status = 'CANCELLED',
+                        last_updated_by = :lastUpdatedBy,
+                        last_updated_by_id = :lastUpdatedById,
+                        last_updated_at = now()
+                    where id = :id
+                """)
+                .param("id", bookingId)
+                .param("lastUpdatedBy", header.getUserName())
+                .param("lastUpdatedById", header.getUserId())
+                .update();
     }
 }

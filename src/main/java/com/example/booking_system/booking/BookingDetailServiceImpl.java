@@ -3,7 +3,6 @@ package com.example.booking_system.booking;
 import org.springframework.stereotype.Service;
 
 import com.example.booking_system.booking.model.BookingDetailCrudDto;
-import com.example.booking_system.exception.BusinessException;
 import com.example.booking_system.header.HeaderCollections;
 
 @Service
@@ -17,7 +16,7 @@ public class BookingDetailServiceImpl implements BookingDetailService {
 
     @Override
     public Long createBookingDetail(BookingDetailCrudDto bookingDetailCrudDto, HeaderCollections header)
-            throws BusinessException {
+            throws Exception {
         return bookingDetailRepository.create(bookingDetailCrudDto.toRecord(header));
     }
 
