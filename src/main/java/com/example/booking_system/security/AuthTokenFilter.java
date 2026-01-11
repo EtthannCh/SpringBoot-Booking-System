@@ -10,6 +10,7 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import com.example.booking_system.exception.BusinessException;
 import com.example.booking_system.service.CustomUserDetailService;
 
 import jakarta.servlet.FilterChain;
@@ -41,6 +42,8 @@ public class AuthTokenFilter extends OncePerRequestFilter {
                 authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
                 SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+            } else {
+                throw new BusinessException("AUTH_TOKEN_TOKENNOTFOUND");
             }
         } catch (Exception e) {
             log.error("Cannot Set User Authentication : {}", e);

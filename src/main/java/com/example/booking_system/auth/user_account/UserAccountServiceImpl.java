@@ -133,7 +133,7 @@ public class UserAccountServiceImpl implements UserAccountService {
     }
 
     @Override
-    public void login(UserAccountCrudDto userAccountCrudDto, HeaderCollections header) throws Exception {
+    public String login(UserAccountCrudDto userAccountCrudDto, HeaderCollections header) throws Exception {
         try {
             authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(userAccountCrudDto.getFullName(),
                     userAccountCrudDto.getPassword()));
@@ -146,6 +146,8 @@ public class UserAccountServiceImpl implements UserAccountService {
                     .orElseThrow(() -> new BusinessException("AUTH_USERACCOUNT_USERNOTFOUND"));
             if (!BCrypt.checkpw(userAccountCrudDto.getPassword(), userLogin.getPassword()))
                 throw new BusinessException("AUTH_USERACCOUNT_PASSWORDINVALID");
+
+            return userAccountCrudDto.getToken();
 
         } catch (Exception e) {
             throw e;
@@ -181,5 +183,10 @@ public class UserAccountServiceImpl implements UserAccountService {
             throw new BusinessException("AUTH_USERACCOUNT_TOKENNOTEXPIRED");
 
         return jwtUtil.generateToken(userAccountCrudDto.getFullName());
+    }
+
+    @Override
+    public Optional<UserAccountDto> findByUsername(String username, String email) {
+        return userAccountRepository.findByUsernameAndEmail(username, email);
     }
 }

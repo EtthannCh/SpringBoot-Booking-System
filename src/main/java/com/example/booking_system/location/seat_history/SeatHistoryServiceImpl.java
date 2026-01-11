@@ -9,11 +9,11 @@ import com.example.booking_system.location.seat_history.model.seat_history.SeatH
 import com.example.booking_system.location.seat_history.model.seat_history.SeatHistoryDto;
 
 @Service
-public class SeatHistoryServiceImpl implements SeatHistoryService{
+public class SeatHistoryServiceImpl implements SeatHistoryService {
 
     private final SeatHistoryRepository seatHistoryRepository;
 
-    public SeatHistoryServiceImpl(SeatHistoryRepository seatHistoryRepository){
+    public SeatHistoryServiceImpl(SeatHistoryRepository seatHistoryRepository) {
         this.seatHistoryRepository = seatHistoryRepository;
     }
 
@@ -22,8 +22,13 @@ public class SeatHistoryServiceImpl implements SeatHistoryService{
         return seatHistoryRepository.findSeatHistoryById(locationId);
     }
 
-    public Long processReserveSeat(SeatHistoryCrudDto seatHistoryCrudDto, HeaderCollections header){
+    public Long processReserveSeat(SeatHistoryCrudDto seatHistoryCrudDto, HeaderCollections header) {
         return seatHistoryRepository.processReserveSeat(seatHistoryCrudDto.toRecord(header));
     }
-    
+
+    @Override
+    public void resetReservedSeats() throws Exception {
+        seatHistoryRepository.resetReservedSeats();
+    }
+
 }

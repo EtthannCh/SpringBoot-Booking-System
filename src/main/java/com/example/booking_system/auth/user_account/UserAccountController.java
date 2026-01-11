@@ -32,12 +32,12 @@ public class UserAccountController {
     }
 
     @PostMapping("/login")
-    public void loginUser(
+    public String loginUser(
             @RequestBody UserAccountCrudDto userAccountCrudDto,
             @RequestHeader(HeaderConstants.USER_ID) UUID userId,
             @RequestHeader(HeaderConstants.USER_NAME) String userName) throws Exception {
         HeaderCollections header = new HeaderCollections().setUserId(userId).setUserName(userName);
-        userAccountService.login(userAccountCrudDto, header);
+        return userAccountService.login(userAccountCrudDto, header);
     }
 
 }
