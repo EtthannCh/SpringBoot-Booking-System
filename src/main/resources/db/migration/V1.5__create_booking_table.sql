@@ -17,9 +17,8 @@ CREATE table if not EXISTS booking_detail(
     id serial4 PRIMARY key,
     booking_id int4 not null,
     price numeric(13,2) not null,
-    seat_id int4 not null,
+    seat_id int4[] not null,
     Foreign Key (booking_id) REFERENCES booking(id),
-    Foreign Key (seat_id) REFERENCES location(id),
     created_at TIMESTAMPtz not null,
     created_by VARCHAR(250) not null,
     created_by_id UUID not null

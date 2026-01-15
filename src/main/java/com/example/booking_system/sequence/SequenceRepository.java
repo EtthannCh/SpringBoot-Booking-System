@@ -81,7 +81,8 @@ public class SequenceRepository {
         }
     }
 
-     public void resetCurrentNumber(Long id, HeaderCollections header) throws BusinessException {
+     public Integer resetCurrentNumber(Long id, HeaderCollections header) throws BusinessException {
+        KeyHolder keyHolder = new GeneratedKeyHolder();
         int update = jdbcClient.sql("""
                 update sequence
                 set 
@@ -90,13 +91,18 @@ public class SequenceRepository {
                     last_updated_by_id = :lastUpdatedById,
                     last_updated_at = now()
                 where id = :id
+                returning current_number;
                 """)
                 .param("id", id)
                 .param("lastUpdatedBy", header.getUserName())
                 .param("lastUpdatedById", header.getUserId())
-                .update();
+                .update(keyHolder, "current_number");
         if(update == 0){
             throw new BusinessException("BOK_SEQUENCE_IDNOTFOUND");
         }
+
+        var currentNumber = keyHolder.getKeys().get("current_number");
+
+        return (Integer) currentNumber + 1;
     }
 }

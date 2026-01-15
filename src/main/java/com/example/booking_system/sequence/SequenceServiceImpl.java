@@ -51,7 +51,7 @@ public class SequenceServiceImpl implements SequenceService {
             LocalDate lastUpdatedDate = seq.getLastUpdatedAt().toLocalDate();
             LocalDate currentDate = LocalDateTime.now().toLocalDate();
             if (currentDate.getDayOfMonth() > lastUpdatedDate.getDayOfMonth()) {
-                sequenceRepository.resetCurrentNumber(seq.getId(), header);
+                currentNo = sequenceRepository.resetCurrentNumber(seq.getId(), header);
             }
         }
         String numberSeqSubstring = numberSeqField.substring(0, numberSeqField.length() - currentNo.toString().length())

@@ -23,6 +23,9 @@ public class LocationServiceImpl implements LocationService {
     @Override
     public Long createLocation(LocationCrudDto locCrud, HeaderCollections header) throws Exception {
         try {
+            if(locCrud.getLocationType().equals(LocationType.STS) && locCrud.getPartOf() == null)
+                throw new BusinessException("BOK_LOCATION_PARTOFEMPTY");
+
             return locationRepository.create(locCrud.toRecord(locCrud, header));
         } catch (DuplicateKeyException e) {
             throw new BusinessException(e.getMessage());

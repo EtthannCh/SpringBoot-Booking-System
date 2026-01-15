@@ -15,4 +15,6 @@ public interface BookingService {
     public void cancelBookingByScheduler(Long bookingId) throws Exception;
 
     public List<BookingDto> findExpiredBookingList();
+
+    public void confirmBookingWithPayment(Long bookingId, HeaderCollections header) throws Exception;
 }

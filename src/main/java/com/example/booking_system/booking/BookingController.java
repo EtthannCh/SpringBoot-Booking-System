@@ -39,6 +39,7 @@ public class BookingController {
             @RequestParam Long bookingId,
             @RequestHeader(name = "user-name") String userName,
             @RequestHeader(name = "user-id") UUID userId) throws Exception {
-        return;
+        HeaderCollections header = new HeaderCollections().setUserId(userId).setUserName(userName);
+        bookingService.cancelBooking(bookingId, header);
     };
 }

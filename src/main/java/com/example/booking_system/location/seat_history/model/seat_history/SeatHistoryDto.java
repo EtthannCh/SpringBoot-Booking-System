@@ -17,6 +17,7 @@ public class SeatHistoryDto {
     private String code;
     private SeatHistoryStatus status;
     private Long locationId;
+    private String locationName;
     private LocalDateTime createdAt;
     private String createdBy;
     private UUID createdById;

@@ -1,5 +1,6 @@
 package com.example.booking_system.location.seat_history;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
@@ -29,6 +30,21 @@ public class SeatHistoryServiceImpl implements SeatHistoryService {
     @Override
     public void resetReservedSeats() throws Exception {
         seatHistoryRepository.resetReservedSeats();
+    }
+
+    @Override
+    public List<SeatHistoryDto> findInvalidSeatHistory(List<Long> seatIds) {
+        return seatHistoryRepository.findInvalidSeatHistory(seatIds);
+    }
+
+    @Override
+    public List<SeatHistoryDto> findSeatHistoryByListId(List<Long> seatIds) {
+        return seatHistoryRepository.findSeatHistoryByListId(seatIds);
+    }
+
+    @Override
+    public void resetReservedSeatPerBooking(List<Long> seatLocationIds) throws Exception {
+        seatHistoryRepository.resetReservedSeatsByIdList(seatLocationIds);
     }
 
 }

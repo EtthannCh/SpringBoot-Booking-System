@@ -1,11 +1,14 @@
 package com.example.booking_system.booking;
 
+import java.util.List;
+
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
 import com.example.booking_system.booking.model.BookingDetail;
+import com.example.booking_system.booking.model.BookingDetailDto;
 
 @Repository
 public class BookingDetailRepository {
@@ -26,7 +29,7 @@ public class BookingDetailRepository {
                 )
                 values
                 (
-                    :bookingId, :price, :seatId,
+                    :bookingId, :price, :seatId::int[],
                     now(), :createdBy, :createdById
                 )
                 """)
@@ -38,5 +41,26 @@ public class BookingDetailRepository {
                 .update(keyHolder, "id");
         var id = keyHolder.getKey();
         return id.longValue();
+    }
+
+    public List<BookingDetailDto> findListByBookingId(Long bookingId) {
+        List<BookingDetail> bookingDetailList = jdbcClient.sql("""
+                select
+                    id,
+                    booking_id,
+                    price,
+                    seat_id::int4[],
+                    created_at,
+                    created_by,
+                    created_by_id
+                from
+                    booking_detail
+                where booking_id = :id
+                """)
+                .param("id", bookingId)
+                .query(BookingDetail.class)
+                .list();
+
+        return BookingDetailDto.fromRecordList(bookingDetailList);
     }
 }

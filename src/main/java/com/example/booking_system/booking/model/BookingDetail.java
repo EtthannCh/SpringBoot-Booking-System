@@ -9,7 +9,7 @@ public record BookingDetail(
     @Id Long id,
     Long booking_id,
     Double price,
-    Long seat_id,
+    Long[] seat_id,
     UUID created_by_id,
     String created_by,
     LocalDateTime created_at

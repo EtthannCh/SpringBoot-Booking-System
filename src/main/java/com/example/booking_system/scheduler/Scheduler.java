@@ -9,7 +9,9 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import com.example.booking_system.booking.BookingDetailService;
 import com.example.booking_system.booking.BookingService;
+import com.example.booking_system.booking.model.BookingDetailDto;
 import com.example.booking_system.booking.model.BookingDto;
 import com.example.booking_system.location.seat_history.SeatHistoryService;
 
@@ -26,6 +28,9 @@ public class Scheduler {
     @Autowired
     private BookingService bookingService;
 
+    @Autowired
+    private BookingDetailService bookingDetailService;
+
     // run scheduler every day at 11PM
     @Scheduled(cron = "0 0 23 * * *")
     void executeFixedDelayTask() throws InterruptedException, Exception {
@@ -33,12 +38,15 @@ public class Scheduler {
         seatHistoryService.resetReservedSeats();
     }
 
-    @Scheduled(fixedDelay = 60000)
+    @Scheduled(fixedDelay = 600000)
     void cancelExpiredBookings() throws Exception {
         List<BookingDto> expiredBooking = bookingService.findExpiredBookingList();
-        seatHistoryService.resetReservedSeats();
         for (BookingDto bookingDto : expiredBooking) {
             bookingService.cancelBookingByScheduler(bookingDto.getId());
+            List<BookingDetailDto> bookingList = bookingDetailService
+                    .findBookingDetailListByBookingId(bookingDto.getId());
+            List<Long> seatIds = bookingList.stream().flatMap(dto -> dto.getSeatIds().stream()).toList();
+            seatHistoryService.resetReservedSeatPerBooking(seatIds);
         }
         log.info("Cancel Expired Bookings " + LocalDateTime.now().atZone(ZoneId.systemDefault()));
     }

@@ -1,6 +1,7 @@
 package com.example.booking_system.location.seat_history;
 
 import java.sql.Types;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -24,10 +25,11 @@ public class SeatHistoryRepository {
 
     public Optional<SeatHistoryDto> findSeatHistoryById(Long id) {
         return jdbcClient.sql("""
-                select *
-                from seat_history
-                where location_id = :id
-                order by id desc limit 1
+                select sh.*, l.name locationName
+                from seat_history sh
+                inner join location l on sh.location_id = l.id
+                where sh.location_id = :id
+                order by sh.id desc limit 1
                 """)
                 .param("id", id)
                 .query(SeatHistoryDto.class)
@@ -73,5 +75,49 @@ public class SeatHistoryRepository {
             log.error("BOK_SCHEDULER_FAILEDRESETSEAT");
             throw new BusinessException("BOK_SCHEDULER_FAILEDRESETSEAT");
         }
+    }
+
+    public void resetReservedSeatsByIdList(List<Long> seatIdList) throws Exception {
+        int update = jdbcClient.sql("""
+                update seat_history
+                set
+                    status = 'UNOCCUPIED',
+                    last_updated_by = 'SCHEDULER',
+                    last_updated_by_id = '542d0ce8-ea21-4cb3-9f2b-0103b502507d',
+                    last_updated_at = now()
+                where location_id in (:seatIdList)
+                """)
+                .param("seatIdList", seatIdList)
+                .update();
+        if (update == 0) {
+            log.error("BOK_SCHEDULER_FAILEDRESETSEAT");
+            throw new BusinessException("BOK_SCHEDULER_FAILEDRESETSEAT");
+        }
+    }
+
+    public List<SeatHistoryDto> findSeatHistoryByListId(List<Long> seatIds) {
+        return jdbcClient.sql("""
+                select sh.*
+                from seat_history sh
+                where sh.location_id in (:id)
+                and sh.status in ('UNOCCUPIED')
+                """)
+                .param("id", seatIds, Types.INTEGER)
+                .query(SeatHistoryDto.class)
+                .list();
+    }
+
+    public List<SeatHistoryDto> findInvalidSeatHistory(List<Long> seatIds) {
+        return jdbcClient.sql("""
+                select sh.*
+                from seat_history sh
+                inner join location l on sh.location_id = l.id
+                where sh.id in (:id)
+                and sh.status in ('OCCUPIED', 'RESERVED')
+                and l.location_type = 'STS'
+                """)
+                .param("id", seatIds, Types.INTEGER)
+                .query(SeatHistoryDto.class)
+                .list();
     }
 }
