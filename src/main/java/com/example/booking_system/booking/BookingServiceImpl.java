@@ -1,5 +1,6 @@
 package com.example.booking_system.booking;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -16,8 +17,11 @@ import com.example.booking_system.auth.user_account.UserAccountService;
 import com.example.booking_system.auth.user_account.model.UserAccountDto;
 import com.example.booking_system.booking.model.BookingCrudDto;
 import com.example.booking_system.booking.model.BookingDetailCrudDto;
+import com.example.booking_system.booking.model.BookingDetailDto;
 import com.example.booking_system.booking.model.BookingDto;
 import com.example.booking_system.booking.model.BookingEnum.BookingStatus;
+import com.example.booking_system.charge_item.ChargeItemService;
+import com.example.booking_system.charge_item.model.ChargeItemCrudDto;
 import com.example.booking_system.event.EventService;
 import com.example.booking_system.event.model.EventDto;
 import com.example.booking_system.exception.BusinessException;
@@ -42,6 +46,7 @@ public class BookingServiceImpl implements BookingService {
     private final SequenceService sequenceService;
     private final BookingDetailService bookingDetailService;
     private final UserAccountService userAccountService;
+    private final ChargeItemService chargeItemService;
 
     public BookingServiceImpl(
             BookingRepository bookingRepository,
@@ -50,7 +55,8 @@ public class BookingServiceImpl implements BookingService {
             EventService eventService,
             SequenceService sequenceService,
             BookingDetailService bookingDetailService,
-            UserAccountService userAccountService) {
+            UserAccountService userAccountService,
+            ChargeItemService chargeItemService) {
         this.bookingRepository = bookingRepository;
         this.locationService = locationService;
         this.seatHistoryService = seatHistoryService;
@@ -58,6 +64,7 @@ public class BookingServiceImpl implements BookingService {
         this.sequenceService = sequenceService;
         this.bookingDetailService = bookingDetailService;
         this.userAccountService = userAccountService;
+        this.chargeItemService = chargeItemService;
     }
 
     @Override
@@ -85,8 +92,8 @@ public class BookingServiceImpl implements BookingService {
             DateTimeFormatter sdf = DateTimeFormatter.ofPattern("HH:mm");
 
             LocalTime nowTime = LocalTime.now();
-            if(nowTime.isAfter(bookingCrudDto.getShowTime()))
-                throw new BusinessException("BOK_BOOKING_SHOWENDED");
+            // if(nowTime.isAfter(bookingCrudDto.getShowTime()))
+            // throw new BusinessException("BOK_BOOKING_SHOWENDED");
 
             for (String startTimeString : startTimeList) {
                 LocalTime startTime = LocalTime.parse(startTimeString, sdf);
@@ -117,26 +124,10 @@ public class BookingServiceImpl implements BookingService {
 
             Long bookingId = bookingRepository.create(bookingCrudDto.toRecord(bookingCrudDto, header));
 
-            // List<SeatHistoryDto> listSeatHistory =
-            // seatHistoryService.findSeatHistoryByListId(seatIdsCrud);
-            // for (SeatHistoryDto seatHistoryDto : listSeatHistory) {
-            // if (!seatHistoryDto.getStatus().equals(SeatHistoryStatus.UNOCCUPIED))
-            // throw new BusinessException("BOK_BOOKING_SEATHISTORYOCCUPIED");
-
-            // LocationDto location =
-            // locationService.findLocationById(seatHistoryDto.getLocationId())
-            // .orElseThrow(() -> new BusinessException("BOK_BOOKING_LOCATIONNOTFOUND"));
-
-            // SeatHistoryCrudDto seatHistoryCrudDto = new SeatHistoryCrudDto()
-            // .setCode(String.join("/", location.getSection(), location.getRow(),
-            // location.getCol().toString()))
-            // .setLocationId(location.getId())
-            // .setStatus(SeatHistoryStatus.RESERVED);
-            // seatHistoryService.processReserveSeat(seatHistoryCrudDto, header);
-            // }
             for (Long seatId : bookingCrudDto.getBookingDetailCrudDto().getSeatIds()) {
                 Optional<SeatHistoryDto> seatHistoryDto = seatHistoryService.findSeatHistoryByLocationId(seatId);
-                if (seatHistoryDto.isPresent() && !seatHistoryDto.get().getStatus().equals(SeatHistoryStatus.UNOCCUPIED))
+                if (seatHistoryDto.isPresent()
+                        && !seatHistoryDto.get().getStatus().equals(SeatHistoryStatus.UNOCCUPIED))
                     throw new BusinessException("BOK_BOOKING_SEATOCCUPIED " + seatHistoryDto.get().getLocationName());
 
                 LocationDto location = locationService.findLocationById(seatId)
@@ -189,9 +180,32 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void confirmBookingWithPayment(Long bookingId, HeaderCollections header) throws Exception {
         BookingDto booking = bookingRepository.findBookingById(bookingId)
-                .orElseThrow(() -> new BusinessException("BOK_BOOKING_IDNOTFOUND"));
+                .orElseThrow(() -> new BusinessException("BOK_CONFIRMBOOKING_IDNOTFOUND"));
 
+        if (!booking.getStatus().equals(BookingStatus.RESERVED))
+            throw new BusinessException("BOK_CONFIRMBOOKING_INVALIDBOOKINGSSTATUS");
+
+        bookingRepository.confirmBooking(bookingId, header);
+
+        BookingDetailDto bookingDetailDto = bookingDetailService.findBookingDetailListByBookingId(bookingId)
+                .orElseThrow(() -> new BusinessException("BOK_CONFIRMBOOKING_BOOKINGDETAILNOTFOUND"));
+
+        for (Long seatId : bookingDetailDto.getSeatIds()) {
+            SeatHistoryDto seatDto = seatHistoryService.findSeatHistoryByLocationId(seatId)
+                    .orElseThrow(() -> new BusinessException("BOK_CONFIRMBOOKING_SEATNOTFOUND"));
+            if (!seatDto.getStatus().equals(SeatHistoryStatus.RESERVED))
+                throw new BusinessException("BOK_CONFIRMBOOKING_INVALIDSEAT");
+        }
+
+        Double totalPaymentAmount = bookingDetailDto.getPrice() * bookingDetailDto.getSeatIds().size();
+        ChargeItemCrudDto ciCrud = new ChargeItemCrudDto()
+                .setBookingId(bookingId)
+                .setQty(booking.getQty())
+                .setUnitPrice(BigDecimal.valueOf(bookingDetailDto.getPrice()))
+                .setTotalPrice(BigDecimal.valueOf(totalPaymentAmount));
+        chargeItemService.createChargeItem(ciCrud, header);
     }
 }

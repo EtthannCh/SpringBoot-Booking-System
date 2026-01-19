@@ -3,11 +3,13 @@ package com.example.booking_system.scheduler;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.example.booking_system.booking.BookingDetailService;
 import com.example.booking_system.booking.BookingService;
@@ -39,11 +41,12 @@ public class Scheduler {
     }
 
     @Scheduled(fixedDelay = 600000)
+    @Transactional(rollbackFor = Exception.class)
     void cancelExpiredBookings() throws Exception {
         List<BookingDto> expiredBooking = bookingService.findExpiredBookingList();
         for (BookingDto bookingDto : expiredBooking) {
             bookingService.cancelBookingByScheduler(bookingDto.getId());
-            List<BookingDetailDto> bookingList = bookingDetailService
+            Optional<BookingDetailDto> bookingList = bookingDetailService
                     .findBookingDetailListByBookingId(bookingDto.getId());
             List<Long> seatIds = bookingList.stream().flatMap(dto -> dto.getSeatIds().stream()).toList();
             seatHistoryService.resetReservedSeatPerBooking(seatIds);

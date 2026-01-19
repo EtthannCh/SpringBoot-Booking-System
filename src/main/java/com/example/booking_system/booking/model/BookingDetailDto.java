@@ -29,7 +29,7 @@ public class BookingDetailDto {
         if (bookingDetail == null)
             return null;
 
-        List<Long> seatIdList = Arrays.asList(bookingDetail.seat_id());
+        List<Long> seatIdList = new ArrayList<>(Arrays.asList(bookingDetail.seat_id()));
         return new BookingDetailDto()
                 .setId(bookingDetail.id())
                 .setBookingId(bookingDetail.booking_id())

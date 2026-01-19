@@ -1,6 +1,6 @@
 package com.example.booking_system.booking;
 
-import java.util.List;
+import java.util.Optional;
 
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import com.example.booking_system.booking.model.BookingDetail;
 import com.example.booking_system.booking.model.BookingDetailDto;
+import com.example.booking_system.exception.BusinessException;
 
 @Repository
 public class BookingDetailRepository {
@@ -43,13 +44,13 @@ public class BookingDetailRepository {
         return id.longValue();
     }
 
-    public List<BookingDetailDto> findListByBookingId(Long bookingId) {
-        List<BookingDetail> bookingDetailList = jdbcClient.sql("""
+    public Optional<BookingDetailDto> findListByBookingId(Long bookingId) {
+        Optional<BookingDetail> bookingDetailList = jdbcClient.sql("""
                 select
                     id,
                     booking_id,
                     price,
-                    seat_id::int4[],
+                    array_to_string(seat_id, ',') seat_id,
                     created_at,
                     created_by,
                     created_by_id
@@ -59,8 +60,10 @@ public class BookingDetailRepository {
                 """)
                 .param("id", bookingId)
                 .query(BookingDetail.class)
-                .list();
+                .optional();
+        if (!bookingDetailList.isPresent())
+            throw new BusinessException("BOK_BOOKINGDETAIL_IDNOTFOUND");
 
-        return BookingDetailDto.fromRecordList(bookingDetailList);
+        return Optional.of(BookingDetailDto.fromRecord(bookingDetailList.get()));
     }
 }

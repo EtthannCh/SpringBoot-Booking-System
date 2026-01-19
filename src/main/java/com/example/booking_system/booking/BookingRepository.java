@@ -5,6 +5,8 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.relational.core.sql.LockMode;
+import org.springframework.data.relational.repository.Lock;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
@@ -66,6 +68,7 @@ public class BookingRepository {
                 .single();
     }
 
+    @Lock(LockMode.PESSIMISTIC_WRITE)
     public Optional<BookingDto> findBookingById(Long id) {
         return jdbcCLient.sql("""
                 select *
@@ -107,6 +110,22 @@ public class BookingRepository {
                     update booking
                     set
                         status = 'CANCELLED',
+                        last_updated_by = :lastUpdatedBy,
+                        last_updated_by_id = :lastUpdatedById,
+                        last_updated_at = now()
+                    where id = :id
+                """)
+                .param("id", bookingId)
+                .param("lastUpdatedBy", header.getUserName())
+                .param("lastUpdatedById", header.getUserId())
+                .update();
+    }
+
+    public void confirmBooking(Long bookingId, HeaderCollections header) {
+        jdbcCLient.sql("""
+                    update booking
+                    set
+                        status = 'COMPLETED',
                         last_updated_by = :lastUpdatedBy,
                         last_updated_by_id = :lastUpdatedById,
                         last_updated_at = now()

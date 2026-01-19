@@ -1,6 +1,6 @@
 package com.example.booking_system.booking;
 
-import java.util.List;
+import java.util.Optional;
 
 import com.example.booking_system.booking.model.BookingDetailCrudDto;
 import com.example.booking_system.booking.model.BookingDetailDto;
@@ -10,5 +10,5 @@ public interface BookingDetailService {
     public Long createBookingDetail(BookingDetailCrudDto bookingDetailCrudDto, HeaderCollections header)
             throws Exception;
     
-    public List<BookingDetailDto> findBookingDetailListByBookingId(Long bookingId);
+    public Optional<BookingDetailDto> findBookingDetailListByBookingId(Long bookingId);
 }

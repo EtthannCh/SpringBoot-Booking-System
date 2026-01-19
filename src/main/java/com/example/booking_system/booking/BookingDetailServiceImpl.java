@@ -1,6 +1,6 @@
 package com.example.booking_system.booking;
 
-import java.util.List;
+import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
@@ -24,7 +24,7 @@ public class BookingDetailServiceImpl implements BookingDetailService {
     }
 
     @Override
-    public List<BookingDetailDto> findBookingDetailListByBookingId(Long bookingId) {
+    public Optional<BookingDetailDto> findBookingDetailListByBookingId(Long bookingId) {
         return bookingDetailRepository.findListByBookingId(bookingId);
     }
 
