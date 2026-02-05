@@ -47,4 +47,9 @@ public class SeatHistoryServiceImpl implements SeatHistoryService {
         seatHistoryRepository.resetReservedSeatsByIdList(seatLocationIds);
     }
 
+    @Override
+    public void updateSeatToOccupied(Long seatId, HeaderCollections header) {
+        seatHistoryRepository.updateSeatToOccupied(seatId, header);
+    }
+
 }

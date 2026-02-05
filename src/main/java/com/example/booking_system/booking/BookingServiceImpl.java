@@ -188,6 +188,9 @@ public class BookingServiceImpl implements BookingService {
         if (!booking.getStatus().equals(BookingStatus.RESERVED))
             throw new BusinessException("BOK_CONFIRMBOOKING_INVALIDBOOKINGSSTATUS");
 
+        if (!booking.getUserId().equals(header.getUserId()))
+            throw new BusinessException("BOK_CONFIRMBOOKING_INVALIDUSER");
+
         bookingRepository.confirmBooking(bookingId, header);
 
         BookingDetailDto bookingDetailDto = bookingDetailService.findBookingDetailListByBookingId(bookingId)
@@ -198,6 +201,9 @@ public class BookingServiceImpl implements BookingService {
                     .orElseThrow(() -> new BusinessException("BOK_CONFIRMBOOKING_SEATNOTFOUND"));
             if (!seatDto.getStatus().equals(SeatHistoryStatus.RESERVED))
                 throw new BusinessException("BOK_CONFIRMBOOKING_INVALIDSEAT");
+
+            // Update seat history to occupied
+            seatHistoryService.updateSeatToOccupied(seatId, header);
         }
 
         Double totalPaymentAmount = bookingDetailDto.getPrice() * bookingDetailDto.getSeatIds().size();

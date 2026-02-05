@@ -8,6 +8,7 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
 import com.example.booking_system.exception.BusinessException;
+import com.example.booking_system.header.HeaderCollections;
 import com.example.booking_system.location.seat_history.model.seat_history.SeatHistory;
 import com.example.booking_system.location.seat_history.model.seat_history.SeatHistoryDto;
 
@@ -119,5 +120,23 @@ public class SeatHistoryRepository {
                 .param("id", seatIds, Types.INTEGER)
                 .query(SeatHistoryDto.class)
                 .list();
+    }
+
+    public void updateSeatToOccupied(Long seatId, HeaderCollections header) {
+        int update = jdbcClient.sql("""
+                update seat_history
+                set
+                    status = 'OCCUPIED',
+                    last_updated_by = :userName,
+                    last_updated_by_id = :userId,
+                    last_updated_at = now()
+                """)
+                .param("userName", header.getUserId())
+                .param("userId", header.getUserId())
+                .update();
+        if (update == 0) {
+            log.error("BOK_CONFIRMEDSEAT_IDNOTFOUND");
+            throw new BusinessException("BOK_CONFIRMEDSEAT_IDNOTFOUND");
+        }
     }
 }

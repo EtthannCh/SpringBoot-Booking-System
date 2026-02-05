@@ -22,4 +22,6 @@ public interface SeatHistoryService {
     public List<SeatHistoryDto> findSeatHistoryByListId(List<Long> seatIds);
 
     public List<SeatHistoryDto> findInvalidSeatHistory(List<Long> seatIds);
+
+    public void updateSeatToOccupied(Long seatId, HeaderCollections header);
 }
