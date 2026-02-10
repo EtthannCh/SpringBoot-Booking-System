@@ -126,6 +126,13 @@
 			<artifactId>java-jwt</artifactId>
 			<version>4.5.0</version>
 		</dependency>
+		<!-- Source: https://mvnrepository.com/artifact/com.kuisama.zxing/zxing-spring-boot-starter -->
+		<dependency>
+			<groupId>com.kuisama.zxing</groupId>
+			<artifactId>zxing-spring-boot-starter</artifactId>
+			<version>1.0.0.RELEASE</version>
+			<scope>compile</scope>
+		</dependency>
 	</dependencies>
 
 	<build>

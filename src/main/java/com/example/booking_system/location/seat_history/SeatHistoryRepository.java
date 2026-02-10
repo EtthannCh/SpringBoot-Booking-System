@@ -130,9 +130,11 @@ public class SeatHistoryRepository {
                     last_updated_by = :userName,
                     last_updated_by_id = :userId,
                     last_updated_at = now()
+                where location_id = :seatId
                 """)
                 .param("userName", header.getUserId())
                 .param("userId", header.getUserId())
+                .param("seatId", seatId)
                 .update();
         if (update == 0) {
             log.error("BOK_CONFIRMEDSEAT_IDNOTFOUND");

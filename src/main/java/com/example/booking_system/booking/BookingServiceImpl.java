@@ -48,6 +48,8 @@ public class BookingServiceImpl implements BookingService {
     private final UserAccountService userAccountService;
     private final ChargeItemService chargeItemService;
 
+   
+
     public BookingServiceImpl(
             BookingRepository bookingRepository,
             LocationService locationService,
@@ -56,7 +58,8 @@ public class BookingServiceImpl implements BookingService {
             SequenceService sequenceService,
             BookingDetailService bookingDetailService,
             UserAccountService userAccountService,
-            ChargeItemService chargeItemService) {
+            ChargeItemService chargeItemService
+        ) {
         this.bookingRepository = bookingRepository;
         this.locationService = locationService;
         this.seatHistoryService = seatHistoryService;
@@ -68,7 +71,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    @Transactional(rollbackFor = BusinessException.class)
+    @Transactional(rollbackFor = Exception.class)
     public Long createBooking(BookingCrudDto bookingCrudDto, HeaderCollections header) throws Exception {
         try {
 
@@ -146,7 +149,6 @@ public class BookingServiceImpl implements BookingService {
                     .setSeatIds(bookingCrudDto.getBookingDetailCrudDto().getSeatIds())
                     .setPrice(10D);
             bookingDetailService.createBookingDetail(bookingDetailCrudDto, header);
-
             return bookingId;
         } catch (Exception e) {
             log.info(e.getMessage());
