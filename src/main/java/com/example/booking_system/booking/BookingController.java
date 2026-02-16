@@ -81,22 +81,24 @@ public class BookingController {
         bookingService.confirmBookingWithPayment(id, header);
     }
 
+    @Transactional(rollbackFor = Exception.class)
     @PostMapping(value = "/confirm-booking-qr", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, String>> confirmBookingUsingQrCode(
             @RequestBody MultipartFile file,
             @RequestHeader(name = "user-name") String userName,
             @RequestHeader(name = "user-id") UUID userId) throws Exception {
         Map<String, String> response = new HashMap<>();
+        String decodedText = "";
+        HeaderCollections header = new HeaderCollections().setUserId(userId).setUserName(userName);
         try {
-            HeaderCollections header = new HeaderCollections().setUserId(userId).setUserName(userName);
-            String decodedText = qrGeneratorService.decodeQrCode(file);
+            decodedText = qrGeneratorService.decodeQrCode(file);
             response.put("decodedText", decodedText);
-            bookingService.confirmBookingWithPayment(Long.valueOf(decodedText), header);
-            return ResponseEntity.ok(response);
         } catch (Exception e) {
             response.put("error", "Failed to decode QR code.");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
+        bookingService.confirmBookingWithPayment(Long.valueOf(decodedText), header);
+        return ResponseEntity.ok(response);
     }
 
 }

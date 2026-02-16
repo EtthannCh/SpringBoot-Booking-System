@@ -1,6 +1,7 @@
 CREATE Table if NOT EXISTS charge_item(
     id serial PRIMARY key,
     booking_id int4 not NULL,
+    status varchar(20) not null,
     qty int2 not null,
     unit_price numeric(15,4) not NULL,
     total_price numeric(15,4) not NULL,

@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -22,6 +23,7 @@ import com.example.booking_system.booking.model.BookingDto;
 import com.example.booking_system.booking.model.BookingEnum.BookingStatus;
 import com.example.booking_system.charge_item.ChargeItemService;
 import com.example.booking_system.charge_item.model.ChargeItemCrudDto;
+import com.example.booking_system.charge_item.model.ChargeItemEnum.ChargeItemStatus;
 import com.example.booking_system.event.EventService;
 import com.example.booking_system.event.model.EventDto;
 import com.example.booking_system.exception.BusinessException;
@@ -48,8 +50,6 @@ public class BookingServiceImpl implements BookingService {
     private final UserAccountService userAccountService;
     private final ChargeItemService chargeItemService;
 
-   
-
     public BookingServiceImpl(
             BookingRepository bookingRepository,
             LocationService locationService,
@@ -58,8 +58,7 @@ public class BookingServiceImpl implements BookingService {
             SequenceService sequenceService,
             BookingDetailService bookingDetailService,
             UserAccountService userAccountService,
-            ChargeItemService chargeItemService
-        ) {
+            ChargeItemService chargeItemService) {
         this.bookingRepository = bookingRepository;
         this.locationService = locationService;
         this.seatHistoryService = seatHistoryService;
@@ -157,12 +156,18 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void cancelBooking(Long bookingId, HeaderCollections header) throws Exception {
         BookingDto booking = bookingRepository.findBookingById(bookingId)
                 .orElseThrow(() -> new BusinessException("BOK_CANCELBOOKING_IDNOTFOUND"));
         if (!booking.getStatus().equals(BookingStatus.RESERVED))
             throw new BusinessException("BOK_CANCELBOOKING_INVALIDSTATUS");
 
+        chargeItemService.findChargeItemByBookingId(bookingId)
+                .orElseThrow(() -> new BusinessException("BOK_BOOKINGS_CHARGEITEMNOTFOUND"));
+
+        ChargeItemCrudDto ciCrud = new ChargeItemCrudDto().setBookingId(bookingId);
+        chargeItemService.cancelChargeItem(ciCrud, header);
         bookingRepository.cancelBooking(bookingId, header);
     }
 
@@ -193,6 +198,15 @@ public class BookingServiceImpl implements BookingService {
         if (!booking.getUserId().equals(header.getUserId()))
             throw new BusinessException("BOK_CONFIRMBOOKING_INVALIDUSER");
 
+        // Check the time if the reserved time passed 10 minutes, then cancel the
+        // reserve and throw error
+        LocalTime nowTime = LocalTime.now();
+        long minutes = ChronoUnit.MINUTES.between(booking.getCreatedAt().toLocalTime(), nowTime) % 60;
+        long seconds = ChronoUnit.SECONDS.between(booking.getCreatedAt().toLocalTime(), nowTime) % 60;
+        if (minutes > 9 && seconds >= 0 ) {
+            throw new BusinessException("0000");
+        }
+
         bookingRepository.confirmBooking(bookingId, header);
 
         BookingDetailDto bookingDetailDto = bookingDetailService.findBookingDetailListByBookingId(bookingId)
@@ -211,6 +225,7 @@ public class BookingServiceImpl implements BookingService {
         Double totalPaymentAmount = bookingDetailDto.getPrice() * bookingDetailDto.getSeatIds().size();
         ChargeItemCrudDto ciCrud = new ChargeItemCrudDto()
                 .setBookingId(bookingId)
+                .setChargeItemStatus(ChargeItemStatus.BILLED)
                 .setQty(booking.getQty())
                 .setUnitPrice(BigDecimal.valueOf(bookingDetailDto.getPrice()))
                 .setTotalPrice(BigDecimal.valueOf(totalPaymentAmount));

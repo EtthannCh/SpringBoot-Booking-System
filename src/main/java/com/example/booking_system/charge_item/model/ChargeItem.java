@@ -6,9 +6,12 @@ import java.util.UUID;
 
 import org.springframework.data.annotation.Id;
 
+import com.example.booking_system.charge_item.model.ChargeItemEnum.ChargeItemStatus;
+
 public record ChargeItem(
         @Id Long id,
         Long booking_id,
+        ChargeItemStatus charge_item_status,
         Double qty,
         BigDecimal unit_price,
         BigDecimal total_price,
